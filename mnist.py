@@ -8,12 +8,12 @@ import numpy as np
 x = tf.placeholder(tf.float32, [None, 784])
 y_ = tf.placeholder(tf.float32, [None, 10])
 
-W = tf.Variable(tf.random_normal([784,10],dtype=tf.float32))
-b = tf.Variable(tf.random_normal([10],dtype=tf.float32))
+W = tf.Variable(tf.random_normal([784,10], dtype=tf.float32))
+b = tf.Variable(tf.random_normal([10], dtype=tf.float32))
 
 y = tf.matmul(x,W)+b
 
-cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits = y ,labels = y_)
+cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits = y, labels = y_)
 loss = tf.reduce_sum(cross_entropy)
 
 train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
@@ -31,19 +31,31 @@ accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))*100
 
 x_data = mnist.test.images>0.0
 
-accuracy_new = sess.run(accuracy, feed_dict={x:x_data, y_: mnist.test.labels})
+accuracy_new = sess.run(accuracy, feed_dict={x: x_data, y_: mnist.test.labels})
 print(accuracy_new)
 
-weights = sess.run(W,feed_dict = {x:x_data,y_:mnist.test.labels})
-h = open("pixels.txt",'w');
+weights = sess.run(W)
+max_w = 0
+min_w = 0
+for i in range(0,784):
+  for j in range(0,10):
+    if weights[i][j] > max_w:
+      max_w = weights[i][j]
+    elif weights[i][j] < min_w:
+      min_w = weights[i][j]
 
-for r in range(10000):
+
+h = open("pixels.txt",'w');
+num_images = 100
+h.write(str(num_images)+"\n")
+for r in range(num_images):
   for k in range(784):
-    h.write("\n")
-    h.write(str(mnist.test.images[r][k]))
-    h.write(str(mnist_one_hot_false.test.labels[r]))
+    # h.write(str(mnist.test.images[r][k])+"\n")
+    h.write(str(int(mnist.test.images[r][k]*255))+"\n")
+  h.write(str(mnist_one_hot_false.test.labels[r])+"\n")
 h.close()
 
+accuracy_prev = 0
 g = open("accuracy.txt",'r')
 accuracy_prev =float(g.readline())
 g.close()
@@ -53,18 +65,13 @@ if (accuracy_new>accuracy_prev):
   g.write(str(accuracy_new))
   print ("Writing new weights to file")
   f = open("weights.txt",'w')
-  f.write(str(weights[0][0]))
-  for k in range(1,10): 
-    f.write(" ")
-    f.write(str(weights[0][k]))
-  for i in range(1,784):
+  # f.write("max weight: " + str(max_w) + "\n")
+  # f.write("min weight: " + str(min_w) + "\n")
+  for i in range(0,784):
+    for j in range(0,10):
+      # f.write(str(weights[i][j])+" ")
+      f.write(str( int((weights[i][j]-min_w) * (255/(max_w-min_w))))+" ")
     f.write("\n")
-    f.write(str(weights[i][0]))
-    for j in range(1,10):
-      f.write(" ")
-      f.write(str(weights[i][j]))
   f.close()
   g.close()
-     
-
-
+  
