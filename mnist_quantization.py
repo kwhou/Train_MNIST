@@ -9,8 +9,13 @@ x = tf.placeholder(tf.float32, [None, 784])
 y_ = tf.placeholder(tf.float32, [None, 10])
 
 W = tf.Variable(tf.random_normal([784,10], dtype=tf.float32))
+# b = tf.Variable(tf.random_normal([10], dtype=tf.float32))
 
-y = tf.matmul(x, W)
+W_q = tf.fake_quant_with_min_max_args(W, min=-128.0, max=127.0, num_bits=8)
+# b_q = tf.fake_quant_with_min_max_args(b, min=-128.0, max=127.0, num_bits=8)
+
+# y = tf.matmul(x, W_q)#+b_q
+y = tf.matmul(tf.round(x*255)/255, W_q)#+b_q
 
 cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits = y, labels = y_)
 loss = tf.reduce_sum(cross_entropy)
@@ -45,7 +50,7 @@ y_data = mnist.test.labels[0:num_images, :]
 accuracy_new = sess.run(accuracy, feed_dict={x: x_data, y_: y_data})
 print(accuracy_new)
 
-weights = sess.run(W)
+weights = sess.run(W_q)
 
 w_max = 0
 w_min = 0
@@ -71,7 +76,7 @@ if (accuracy_new>accuracy_prev):
   f = open("weights.txt",'w')
   for i in range(0,784):
     for j in range(0,10):
-      f.write(str( int((weights[i][j] - w_min) * 255 / (w_max - w_min)))+" ")
+      f.write(str( int(weights[i][j] - w_min))+" ")
       # f.write(str( weights[i][j] - w_min)+" ")
     f.write("\n")
   f.close()
